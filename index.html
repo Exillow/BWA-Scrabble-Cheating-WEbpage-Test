@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Finder</title>
+  <style>
+    body {
+      font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+      background: #f0f8ff;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #007acc;
+      animation: fadeIn 1s ease-in-out;
+    }
+    input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      animation: fadeIn 1.2s ease-in-out;
+    }
+    input {
+      width: 200px;
+    }
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      background-color: #007acc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005f99;
+    }
+    .word-section {
+      background: #ffffff;
+      border: 2px solid #007acc;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      width: 90%;
+      max-width: 500px;
+      animation: slideIn 0.5s ease-in-out;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .word-section h2 {
+      margin-bottom: 0.5rem;
+      color: #007acc;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.25rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    li {
+      padding: 0.3rem 0.6rem;
+      background-color: #e0f0ff;
+      border-radius: 5px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Word Finder</h1>
+  <input type="text" id="inputString" placeholder="Enter 4-16 letter string" maxlength="20" />
+  <div class="button-group">
+    <button onclick="findWords()">Find Words</button>
+    <button onclick="resetInput()">Reset</button>
+  </div>
+  <div id="results"></div>
+
+  <script>
+    let words = [];
+
+    fetch('words.txt')
+      .then(response => response.text())
+      .then(text => {
+        words = text.split(/\r?\n/).filter(w => w.length >= 4 && w.length <= 20);
+      });
+
+    function isWordFormable(word, letters) {
+      const letterCount = {};
+      for (let c of letters) letterCount[c] = (letterCount[c] || 0) + 1;
+      for (let c of word) {
+        if (!letterCount[c]) return false;
+        letterCount[c]--;
+      }
+      return true;
+    }
+
+    function findWords() {
+      const input = document.getElementById('inputString').value.toLowerCase();
+      if (input.length < 4 || input.length > 20) return;
+
+      const matches = words.filter(word => isWordFormable(word, input));
+      matches.sort((a, b) => b.length - a.length);
+
+      const grouped = {};
+      for (let i = 4; i <= 16; i++) grouped[i] = [];
+      matches.forEach(word => grouped[word.length].push(word));
+
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+
+      Object.keys(grouped).reverse().forEach(len => {
+        const section = grouped[len];
+        if (section.length > 0) {
+          const div = document.createElement('div');
+          div.className = 'word-section';
+          const title = document.createElement('h2');
+          title.textContent = `${len}-letter words`;
+          div.appendChild(title);
+
+          const ul = document.createElement('ul');
+          section.forEach(word => {
+            const li = document.createElement('li');
+            li.textContent = word;
+            ul.appendChild(li);
+          });
+          div.appendChild(ul);
+          results.appendChild(div);
+        }
+      });
+    }
+
+    function resetInput() {
+      document.getElementById('inputString').value = '';
+      document.getElementById('results').innerHTML = '';
+    }
+
+    document.getElementById("inputString").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        findWords();
+      }
+    });
+  </script>
+</body>
+</html>
